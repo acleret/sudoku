@@ -129,18 +129,22 @@
     (let ((list '(1 2 3 4 5 6 7 8 9)))
       (set-difference list (forbid-numb tab l c))))
 
+
+  (defun random-grid (tab)
+    (empty-grid tab)
+    (random-grid-aux tab 0))
   
-  (defun random-grid(tab a)
+  (defun random-grid-aux(tab a)
     (let ((r)
 	  (list '()))
       (do ((i a (1+ i)))
 	  ((= i 9))
+	(empty-line tab i)
 	(do ((j 0 (1+ j)))
 	    ((= j 9))
 	  (setf list (possible-numb tab i j))
 	  (if (eq list NIL)
-	      (progn (empty-line tab i)
-		     (random-grid tab i)))
+	      (random-grid-aux tab i))
 	  (setf r (random (length list)))
 	  (setf (aref tab i j) (nth r list)))))
     tab)
@@ -177,6 +181,3 @@
   );end let
 
 
-;; (setf *g (make-array '(9 9) :initial-content '((1 2 3 4 5 6 7 8 9)(7 8 9 1 2 3 4 5 6)(4 5 6 7 8 9 1 2 3)(2 3 4 5 6 7 8 9 1)(8 9 1 2 3 4 5 6 7)(5 6 7 8 9 1 2 3 4)(3 4 5 6 7 8 9 1 2)					      (6 7 8 9 1 2 3 4 5))))
-
-;;(setf *g (make-array '(9 9) 			      :initial-contents '((0 0 0 0 0 0 0 0 0)						  (7 0 9 1 2 3 4 5 6)						  (4 0 6 7 8 9 1 2 3)						  (2 0 4 5 6 7 8 9 1)						  (8 0 1 2 3 4 5 6 7)						  (5 0 7 8 9 1 2 3 4)						  (3 0 5 6 7 8 9 1 2)						  (0 0 0 0 0 0 0 0 0)						  (6 0 8 9 1 2 3 4 5))))
