@@ -5,6 +5,7 @@
     (format t "~%  -------------------------"))
 
 
+  ;;affiche une grille de sudoku
   (defun print-grid(grid)
     (format t "    a b c   d e f   g h i")
     (do ((i 0 (1+ i)))
@@ -25,11 +26,14 @@
     (print-line))
 
 
+  ;;initialise une grille (vide pour l'instant) et commence le jeu
   (defun sudoku()
     (empty-grid GRID)
     (print-grid GRID)
     (play))
 
+
+  ;;commence le jeu
   (defun play()
     (format t "~%choisissez un nombre, une colonne et une ligne (ex 6 a 1): ")
     (let ((nb (read)))      
@@ -56,17 +60,21 @@
   (play))
   
 
+  ;;vide une grille
   (defun empty-grid(tab)
     (do ((i 0 (1+ i)))
 	((= i (car (array-dimensions tab))))
       (empty-line tab i)))
 
+
+  ;;vide la ligne d'une grille
   (defun empty-line(tab l)
     (do ((i 0 (1+ i)))
 	((= i (car (array-dimensions tab))))
       (setf (aref tab l i) 0)))
   
 
+  ;;retourne si n est dans la ligne l de la grille
   (defun in-line(tab l n)
     (let ((res NIL))
       (do ((i 0 (1+ i)))
@@ -75,7 +83,8 @@
 	    (setf res T)))
       res))
 
-
+  
+  ;;retourne si n est dans la colonne c de la grille
   (defun in-col(tab c n)
     (let ((res NIL))
       (do ((i 0 (1+ i)))
@@ -84,7 +93,8 @@
 	    (setf res T)))
       res))
   
-  
+
+  ;;retourne si n est dans la zone contenant la position l c d'une grille
   (defun in-zone(tab l c n)
     (let ((res NIL)
   	  (z (zone l c)))
@@ -99,6 +109,22 @@
       res))
   
 
+  ;;retourne la zone contenant la case l c
+  ;; 
+  ;;  -------------------------
+  ;;  |       |       |       |
+  ;;  |   0   |   1   |   2   |
+  ;;  |       |       |       |
+  ;;  -------------------------
+  ;;  |       |       |       |
+  ;;  |   3   |   4   |   5   |
+  ;;  |       |       |       |
+  ;;  -------------------------
+  ;;  |       |       |       |
+  ;;  |   6   |   7   |   8   |
+  ;;  |       |       |       |
+  ;;  -------------------------
+  ;;
   (defun zone(l c)
     (let ((z 0))
       (cond ((< l 3)
@@ -115,7 +141,8 @@
 		   ((>= 6) (setf z 8)))))
       z))
 
-  
+
+  ;;retourne la liste des nombres que la case l c ne peut pas contenir
   (defun forbid-numb(tab l c)
     (let ((res '()))
       (do ((i 1 (1+ i)))
@@ -124,15 +151,18 @@
 	    (setf res (cons i res))))
       res))
 
-  
+
+  ;;retourne la liste des nombres que la case l c peut contenir
   (defun possible-numb(tab l c)
     (let ((list '(1 2 3 4 5 6 7 8 9)))
       (set-difference list (forbid-numb tab l c))))
 
 
+  ;;retourne une grille de sudoku aléatoire et complète
   (defun random-grid (tab)
     (empty-grid tab)
     (random-grid-aux tab 0))
+
   
   (defun random-grid-aux(tab a)
     (let ((r)
