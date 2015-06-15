@@ -1,0 +1,44 @@
+body {
+    font-family:Verdana, Arial, sans-serif;
+    font-size:12px;
+}
+.tours {
+    border: #666 solid 2px;
+    margin: 0;
+    padding:0; 
+}
+.tableau {
+    border-collapse:collapse; 
+    border: #666 solid 1px;
+    margin: 0;
+    padding:0; 
+}
+.tdd{
+    border: solid 2px #666; 
+    margin: 0;
+    padding:0; 	
+}
+input.trou {
+    font-size:20px;
+    color:#F08500;
+    border: 0; 
+    text-align:center;
+    vertical-align:bottom;
+    margin-top: 6px; 
+    padding:0;
+    width:30px;
+    height:27px;
+    cursor:default;
+}
+input.chiffre {
+    font-size:20px;
+    color:#000000;
+    border: 0; 
+    text-align:center;
+    vertical-align:bottom;
+    margin-top: 6px; 
+    padding:0;
+    width:30px;
+    height:27px;
+    cursor:default;
+}
