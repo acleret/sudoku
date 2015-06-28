@@ -52,47 +52,49 @@
   (let ((grid (create-grid)))
     (run-game (make-game grid))))
 
-;; affiche une grille de sudoku
-(defun print-grid (grid)
-  (if (not (check-is-valid-square grid))
-      (format t "ERREUR: taille non valide")
-      (progn (print-letters)
-	     (print-grid-aux grid)
-	     (print-line)
-	     (format t "~%"))))
 
-;; affiche la ligne des lettres en fonction de la taille de la grille
+(defun print-grid (grid)
+  (when (not (check-is-valid-square grid))  ;; vérifie que grid est un tableau carré
+    (format t "ERREUR: taille non valide")  ;; dont la taille est 2², 3², 4² ou 5²
+    (return-from print-grid)) 
+  (print-letters)                           ;; affiche le nom des colonnes
+  (dotimes (i *size* (print-line))
+    (when (zerop (mod i *sqrt-size*))
+      (print-line))
+    (print-number-line (1+ i))              ;; affiche le nom de la ligne
+    (dotimes (j *size* (format t "|~%"))
+      (if (zerop (mod j *sqrt-size*))       
+	  (format t "| "))            ;; affiche un "|" toutes les *sqrt-size* cases
+      (if (zerop (aref grid i j))
+	  (format t "_ ")             ;; affiche un "_" pour les cases vides
+	  (if (>= *size* 10)
+	      (if (>= (aref grid i j) 10)   ;; affiche une lettre si le nombre >= 10
+		  (print-number-to-letter (aref grid i j))
+		  (format t "~d " (aref grid i j)))
+	      (format t "~d " (aref grid i j)))))))
+
+;; affiche le nom des colonnes en fonction de la taille de la grille
 (defun print-letters ()
   (format t "   ")
-  (dotimes (i *size*)
-    (if (= 0 (mod i *sqrt-size*))
-	(format t "  "))
+  (dotimes (i *size* (format t "~%"))
+    (when (zerop (mod i *sqrt-size*))
+      (format t "  "))
     (format t "~d " (code-char (+ i 97)))))
 
 ;; affiche une barre en fonction de la taille de la grille
 (defun print-line ()
-  (format t "~%   ")
-  (dotimes (i (+ (* 2 *size*) (* 2 *sqrt-size*) 1))
+  (format t "   ")
+  (dotimes (i (+ (* 2 *size*) (* 2 *sqrt-size*) 1) (format t "~%"))
     (format t "-")))
 
-;; affiche une grille
-(defun print-grid-aux (grid)
-  (dotimes (i *size*)
-    (if (= (mod i *sqrt-size*) 0)
-	(print-line))
-    (format t "~%~2d " (1+ i))
-    (dotimes (j *size*)
-      (if (= (mod j *sqrt-size*) 0)
-	  (format t "| "))
-      (if (zerop (aref grid i j))
-	  (format t "_ ")
-	  (if (>= *size* 10)
-	      (if (>= (aref grid i j) 10)
-		  (format t "~d " (code-char (+ (aref grid i j) 55)))
-		  (format t "~d " (aref grid i j)))
-	      (format t "~d " (aref grid i j)))))
-    (format t "|")))
+;; affiche le numéro de la ligne n
+(defun print-number-line (n)
+  (format t "~2d " n))
 
+;; affiche la lettre majuscule correspondante à l'entier n à partir de 10
+;; n=10 affiche A, n=11 affiche B, n=12 affiche C, etc. 
+(defun print-number-to-letter (n)
+  (format t "~d " (code-char (+ n 55))))
 
 (defun message-begin ()
   (format t "
@@ -186,36 +188,36 @@ mon choix : ")
   (end-game game))
 
 ;; vide une grille
-(defun empty-grid(tab)
-  (dotimes (i (first (array-dimensions tab)))
-    (empty-line tab i)))
+(defun empty-grid(grid)
+  (dotimes (i (first (array-dimensions grid)))
+    (empty-line grid i)))
 
 ;; vide la ligne d'une grille
-(defun empty-line(tab l)
-  (dotimes (i (first (array-dimensions tab)))
-    (setf (aref tab l i) 0)))
+(defun empty-line(grid l)
+  (dotimes (i (first (array-dimensions grid)))
+    (setf (aref grid l i) 0)))
 
 ;; retourne si n est dans la ligne l de la grille
-(defun in-line(tab l n)
+(defun in-line(grid l n)
   (let ((res NIL))
-    (dotimes (i (first (array-dimensions tab)) res)
-      (if (= (aref tab l i) n)
+    (dotimes (i (first (array-dimensions grid)) res)
+      (if (= (aref grid l i) n)
 	  (setf res T)))))
 
 ;; retourne si n est dans la colonne c de la grille
-(defun in-col(tab c n)
+(defun in-col(grid c n)
   (let ((res NIL))
-    (dotimes (i (first (array-dimensions tab)) res)
-      (if (= (aref tab i c) n)
+    (dotimes (i (first (array-dimensions grid)) res)
+      (if (= (aref grid i c) n)
 	  (setf res T)))))
 
 ;; retourne si n est dans la zone contenant la position l c d'une grille
-(defun in-zone(tab l c n)
+(defun in-zone(grid l c n)
   (let ((res NIL)
 	(z (zone l c)))
     (dotimes (i *sqrt-size* res)
       (dotimes (j *sqrt-size*)
-	(if (= (aref tab
+	(if (= (aref grid
 		     (+ i (* (floor (/ z *sqrt-size*)) *sqrt-size*))
 		     (+ j (* (mod z *sqrt-size*) *sqrt-size*))) n)
 	    (setf res T))))))
@@ -247,44 +249,44 @@ mon choix : ")
     (+ (* a *sqrt-size*) b)))
 
 ;;retourne la liste des nombres que la case l c ne peut pas contenir
-(defun forbid-numb(tab l c)
+(defun forbid-numb(grid l c)
   (let ((res '())
-	(dimension (first (array-dimensions tab))))
+	(dimension (first (array-dimensions grid))))
     (do ((i 1 (1+ i)))
 	((= i (1+ dimension)))
-      (if (or (in-col tab c i) (in-line tab l i) (in-zone tab l c i))
+      (if (or (in-col grid c i) (in-line grid l i) (in-zone grid l c i))
 	  (setf res (cons i res))))
     res))
 
 ;;retourne la liste des nombres que la case l c peut contenir
-(defun possible-numb-empty (tab l c)
-  (assert (zerop (aref tab l c)))
-  (set-difference *squares* (forbid-numb tab l c)))
+(defun possible-numb-empty (grid l c)
+  (assert (zerop (aref grid l c)))
+  (set-difference *squares* (forbid-numb grid l c)))
 
-(defun possible-numb(tab l c)
-  (and (zerop (aref tab l c))
-       (possible-numb-empty tab l c)))
+(defun possible-numb(grid l c)
+  (and (zerop (aref grid l c))
+       (possible-numb-empty grid l c)))
 
 ;;retourne une grille de sudoku aléatoire et complète
-(defun random-grid (tab)
-  (empty-grid tab)
-  (dotimes (i *size* tab)
-    (random-line tab i 0)))
+(defun random-grid (grid)
+  (empty-grid grid)          ;; on vide la grille grid
+  (dotimes (i *size* grid)   ;; pour chaque ligne de grid
+    (random-line grid i 0))) ;; on appelle random-line
 
-;; retourne une ligne aléatoire
-(defun random-line (tab l cpt) ;; decomposer par lignes
+;; affecte à la ligne l de grid une ligne aléatoire si cpt <= *size* x *size*
+(defun random-line (grid l cpt) 
   (when (> cpt (* *size* *size*))
-    (random-grid tab))
+    (random-grid grid))
   (let ((r)
-	(possibilities '()))
-    (empty-line tab l)
-    (dotimes (i *size* tab)
-      (setf possibilities (possible-numb tab l i))
-      (cond ((eq possibilities NIL)
-	     (random-line tab l (1+ cpt))
-	     (return-from random-line)))
-      (setf r (random (length possibilities)))
-      (setf (aref tab l i) (nth r possibilities)))))
+	(possibilities '()))        
+    (empty-line grid l)                    ;; on vide la ligne
+    (dotimes (i *size* grid)
+      (setf possibilities (possible-numb grid l i)) ;; on récupère les possibilités de la case
+      (cond ((eq possibilities NIL)        ;; s'il n'y a pas de possibilités
+	     (random-line grid l (1+ cpt)) ;; on recommence et on incrémente cpt
+	     (return-from random-line)))   ;; on sort de la boucle si cpt non valide
+      (setf r (random (length possibilities))) ;; sinon on récupère un possibilité aléatoirement 
+      (setf (aref grid l i) (nth r possibilities))))) ;; et on l'affecte
 
 
 ;; retourne si grid est résolvable
@@ -305,8 +307,8 @@ mon choix : ")
       grid-init
       (progn
 	(setf grid-prev (copy-grid grid-init))
-	(tactics-unique-choice grid-init)
-	(tactics-only-in-zone-col-line grid-init)
+	(tactics-naked-single grid-init)
+	(tactics-single-in-group grid-init)
 	(solve-grid-aux grid-init grid-prev))))
    
 ;; retourne une grille aléatoire à compléter
@@ -338,60 +340,64 @@ mon choix : ")
 	     (random-full-case-aux grid rl rc dim))
       (list rl rc)))
 
-;; retourn si une case de la grille n'a qu'une seule possibilité (si elle est résoluble)
-(defun unique-choice (grid i j)
-  (and (zerop (aref grid i j))
-       (= (length (possible-numb grid i j)) 1)))
+;; retourne si une case de la grille n'a qu'une seule possibilité
+(defun naked-single (grid i j)
+  (and (zerop (aref grid i j))                   ;; la case est vide et
+       (= (length (possible-numb grid i j)) 1))) ;; il y a exactement 1 possibilité
 
-;; si une case n'a qu'une possibilité
-(defun tactics-unique-choice (grid)
-  (if (full-grid grid)
+;; affecte les cases n'ayant qu'une seule possibilité
+(defun tactics-naked-single (grid)
+  (if (full-grid grid) ;; si la grille est résolue alors on la retourne
       grid
-      (progn
-	(dotimes (i (first (array-dimensions grid)))
-	  (dotimes (j (second (array-dimensions grid)))
-	    (if (unique-choice grid i j)
-		(progn
-		  (setf (aref grid i j) (car (possible-numb grid i j)))
-		  (tactics-unique-choice grid))
-		grid))))))
+      (progn ;; sinon
+	(dotimes (i (first (array-dimensions grid)) grid) ;; on parcours chaque case
+	  (dotimes (j (second (array-dimensions grid))) ;; de la grille
+	    (when (naked-single grid i j) ;; s'il n'y a qu'une seule possibilité
+	      (setf (aref grid i j) (car (possible-numb grid i j))) ;; on affecte la case 
+	      (tactics-naked-single grid)
+	      (return-from tactics-naked-single))))))) ;; et on recommence
 
-(defun only-in-zone (grid nb l c)
-  (let ((zone (zone l c)))
-    (dotimes (i (first (array-dimensions grid)) T)
-    (dotimes (j (second (array-dimensions grid)))
-      (when (and (= zone (zone i j))
-		 (not (coor-egal l c i j))
-		 (is-member nb (possible-numb grid i j)))
-	(return-from only-in-zone NIL))))))
+;; retourne si nb n'est possible que dans la case l c de la zone où se trouve la case
+(defun single-in-zone (grid nb l c)
+  (let ((zone (zone l c)))                   ;; on récupère la zone de la case l c
+    (dotimes (i (first (array-dimensions grid)) T) ;; on parcours la grille et on renvoie T
+      (dotimes (j (second (array-dimensions grid)))
+	(when (and (= zone (zone i j))       ;; si on est dans la zone
+		   (not (coor-egal l c i j)) ;; la case n'est pas celle de l c
+		   (is-member nb (possible-numb grid i j))) ;; et on trouve nb parmi les possibilités 
+	  (return-from single-in-zone NIL))))))             ;; alors on sort et on retourne NIL
 
-(defun only-in-col (grid nb l c)
-  (let ((res T))
-    (dotimes (i (first (array-dimensions grid)) res)
-      (when (and (not (equal (list l c) (list i c)))
-		 (is-member nb (possible-numb grid i c)))
-	(setf res NIL)))))
+;; retourne si nb n'est possible que dans la case l c de la colonne où se trouve la case
+(defun single-in-col (grid nb l c)
+  (dotimes (i (first (array-dimensions grid)) T)   ;; on parcours la colonne et on renvoie T
+    (when (and (not (equal (list l c) (list i c))) ;; si la case n'est pas l c
+	       (is-member nb (possible-numb grid i c))) ;; et on trouve nb parmi les possibilités
+      (return-from single-in-col NIL))))))              ;; alors on sort et on retourne NIL
 
-(defun only-in-line (grid nb l c)
-  (let ((res T))
-    (dotimes (i (first (array-dimensions grid)) res)
-      (when (and (not (equal (list l c) (list l i)))
-		 (is-member nb (possible-numb grid l i)))
-	(setf res NIL)))))
 
-;; si un nombre n'est possible que dans une seul case de la zone, de la ligne ou de la colonne
-(defun tactics-only-in-zone-col-line (grid)
-  (if (full-grid grid)
-      grid
-      (progn
-	(dotimes (i (first (array-dimensions grid)) grid)
-	  (dotimes (j (second (array-dimensions grid)))
-	    (let ((l (possible-numb grid i j)))
-	      (dotimes (nb (length l))
-		(if (or (only-in-zone grid (nth nb l) i j)
-			(only-in-col grid (nth nb l) i j)
-			(only-in-line grid (nth nb l) i j))
-		    (setf (aref grid i j) (nth nb l))))))))))
+;; retourne si nb n'est possible que dans la case l c de la ligne où se trouve la case
+(defun single-in-line (grid nb l c)
+  (dotimes (i (first (array-dimensions grid)) T)   ;; on parcours la ligne et on renvoie T
+    (when (and (not (equal (list l c) (list l i))) ;; si la case n'est pas l c
+	       (is-member nb (possible-numb grid l i))) ;; et on trouve nb parmi les possibiités
+      (return-from single-in-line NIL))))))             ;; alors on sort et on retourne NIL
+
+;; affecte les cases dont une possibilité n'y est possible que dans la zone, ligne ou colonne
+(defun tactics-single-in-group (grid)
+  (if (full-grid grid) ;; si la grille est résolue
+      grid             ;; alors on la retourne
+      (progn           ;; sinon
+	(dotimes (i (first (array-dimensions grid)) grid) ;; on parcours chaque
+	  (dotimes (j (second (array-dimensions grid)))   ;; case de la grille
+	    (let ((l (possible-numb grid i j))) ;; on récupère les possibilités
+	      (dotimes (nb (length l))          ;; et pour chaque possibilité
+		(when (or
+		       (single-in-zone grid (nth nb l) i j)  ;; on vérifie si c'est la
+		       (single-in-col grid (nth nb l) i j)   ;; seule possibilité de la 
+		       (single-in-line grid (nth nb l) i j)) ;; zone, ligne ou colonne
+		  (setf (aref grid i j) (nth nb l))          ;; on affecte la case
+		  (tactics-single-in-group grid)             ;; et on recommence
+		  (return-from tactics-single-in-group))))))))) 
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
@@ -460,7 +466,6 @@ mon choix : ")
 ;; (defun is-possible (nb grid l c)
 ;; 		 (is-member nb (possible-numb grid i j)))
 
-
 (defun make-grid-from-list (l)
   (make-grid l))
 
@@ -472,10 +477,12 @@ mon choix : ")
   (with-open-file (stream filename)
     (load-grid-from-stream stream)))
 
+;; charge un fichier de la forme "../grid/sxs-n.lisp"
 (defun load-grid-randomly()
-  (let* ((r (random 8))
-	 (c (code-char (+ r 49)))
-	 (f ".lisp"))
-    (setf f (concatenate 'string "../grid/9x9-" (string c) f))
-    (format t "file: ~d~%" f)
-    (load-grid-from-file f)))
+  (let* ((r (random 8))	       ;; on initialise un nombre aléatoire parmi le nombre
+	 (num (string (code-char (+ r 49))))  ;; de fichier que l’on peut charger
+	 (size (string (code-char (+ *size* 48))))  ;; 48 vaut "0" en ascii
+	 (file ".lisp"))		      ;; on initialise le nom du fichier
+    (setf file (concatenate 'string "../grid/" size "x" size "-" num file))
+    (format t "file: ~d~%" file)
+    (load-grid-from-file file)))
